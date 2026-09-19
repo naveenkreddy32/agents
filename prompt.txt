@@ -1,0 +1,733 @@
+Create the initial repository structure and Markdown configuration files for an AI-assisted migration framework that analyses SBS NOMAD workloads and migrates them to a Lakehouse/Spark platform.
+
+The repository must follow exactly this structure:
+
+```text
+sbs-nomad-lakehouse-migration/
+│
+├── .github/
+│   ├── agents/
+│   │   ├── nomad-analyst.agent.md
+│   │   ├── migration-designer.agent.md
+│   │   └── spark-developer.agent.md
+│   │
+│   ├── instructions/
+│   │   ├── general.instructions.md
+│   │   ├── nomad.instructions.md
+│   │   ├── migration.instructions.md
+│   │   └── spark.instructions.md
+│   │
+│   ├── skills/
+│   │   └── nomad-analysis/
+│   │       └── SKILL.md
+│   │
+│   └── copilot-instructions.md
+│
+├── migration/
+│   └── TEST_CASE_001/
+│       ├── input/
+│       │   ├── source-files/
+│       │   ├── loading-jobs/
+│       │   └── reporting-jobs/
+│       │
+│       ├── analysis.md
+│       ├── questions.md
+│       ├── design.md
+│       ├── tests.md
+│       └── status.md
+│
+├── knowledge/
+│   ├── nomad/
+│   └── lakehouse/
+│
+├── architecture/
+│   └── target-architecture.md
+│
+└── README.md
+```
+
+Create all required Markdown files and directories. Do not create additional agents, orchestration components, databases, APIs, or unnecessary framework components at this stage.
+
+The framework must be designed around three cooperating agents:
+
+1. NOMAD Analyst
+2. Migration Designer
+3. Spark Developer
+
+The agents must communicate primarily through repository artefacts, not through assumptions about previous chat context.
+
+==================================================
+
+1. CORE PRINCIPLES
+   ==================================================
+
+Build the framework around these principles.
+
+### Evidence over assumption
+
+Agents must never invent missing information.
+
+When analysing a migration, distinguish clearly between:
+
+* FACT — directly supported by the provided source artefacts
+* INFERENCE — logically inferred from evidence
+* ASSUMPTION — required to proceed but not yet verified
+* UNKNOWN — insufficient information
+* PROPOSED — a possible future design/interpretation that has not been approved
+
+Agents must preserve the distinction throughout the workflow.
+
+Never silently convert an inference or assumption into a fact.
+
+### Traceability
+
+Important conclusions must be traceable back to the source artefact wherever practical.
+
+For example:
+
+* source file
+* NOMAD job
+* job section
+* field
+* transformation
+* dependency
+* filter
+* mapping
+* business rule
+
+The analysis should make it possible for another person or agent to understand why a conclusion was reached.
+
+### Original input is authoritative for legacy behaviour
+
+The original files under:
+
+```text
+migration/<case>/input/
+```
+
+are the primary evidence for understanding what the existing NOMAD implementation actually does.
+
+`analysis.md` is a structured interpretation of those inputs.
+
+It must NOT become a substitute for the original source artefacts.
+
+If a later agent encounters an important claim in `analysis.md`, it should inspect the original input when the claim materially affects a design decision.
+
+### Approved architecture is authoritative for target architecture
+
+`architecture/target-architecture.md` represents the currently approved target architecture.
+
+Agents may identify conflicts, gaps, or possible improvements.
+
+They must not silently rewrite architectural principles or decisions simply to make their current migration easier.
+
+If a migration requires a possible architectural change, record it as a proposal or question and make the conflict explicit.
+
+### Knowledge is reusable but must be trustworthy
+
+The `knowledge/` directory contains reusable organisational knowledge.
+
+It should contain information that can reasonably be reused across migrations.
+
+Agents should read relevant knowledge before performing their work.
+
+However, knowledge must not override direct evidence from the migration being analysed.
+
+If migration-specific source evidence contradicts existing knowledge:
+
+1. Prefer the direct source evidence for that migration.
+2. Identify the conflict.
+3. Record it in the migration's questions or analysis.
+4. Do not silently rewrite the shared knowledge.
+
+Agents may identify potential additions or corrections to knowledge, but they must not silently turn unverified observations into authoritative organisational knowledge.
+
+==================================================
+2. AGENT RESPONSIBILITIES
+=========================
+
+### NOMAD Analyst
+
+The NOMAD Analyst is responsible for understanding the existing legacy workload.
+
+It must:
+
+* discover and inspect the migration case input files
+* understand source files
+* understand loading jobs
+* understand reporting jobs
+* follow dependencies between jobs and files
+* identify inputs and outputs
+* identify transformations
+* identify joins
+* identify filters
+* identify aggregations
+* identify mappings
+* identify business rules
+* identify dependencies
+* identify sequencing
+* identify EOD/intraday behaviour where observable
+* identify incremental/full-load behaviour where observable
+* identify error/default/null handling
+* identify temporal/date behaviour
+* identify data-quality assumptions
+* identify what the workload explicitly does NOT process
+* identify unknowns and ambiguities
+
+The analyst must describe what NOMAD actually does.
+
+It must NOT design the Lakehouse solution.
+
+It must NOT force the legacy structure into a target architecture.
+
+It creates/updates:
+
+```text
+migration/<case>/analysis.md
+migration/<case>/questions.md
+migration/<case>/status.md
+```
+
+It may identify reusable knowledge that should be considered for `knowledge/`, but it must not silently add unverified information to authoritative knowledge.
+
+### Migration Designer
+
+The Migration Designer is responsible for designing the target Lakehouse/Spark solution based on the analysed legacy behaviour and approved architecture.
+
+It must:
+
+* read `analysis.md`
+* read `questions.md`
+* read relevant `knowledge/`
+* read `architecture/target-architecture.md`
+* inspect original source artefacts when necessary
+* distinguish functional requirements from legacy implementation details
+* avoid blindly reproducing NOMAD staging/intermediate structures
+* determine appropriate Bronze/Silver/Semantic/Gold placement where applicable
+* identify canonical versus source-specific attributes
+* identify reusable/reference data
+* define target entities/tables/data products where appropriate
+* define transformations
+* define derived attributes and metrics
+* define keys
+* define partitioning where relevant
+* define incremental/upsert/snapshot behaviour
+* define temporal behaviour
+* consider late-arriving data and replay
+* identify data-quality requirements
+* identify reconciliation requirements
+* identify unresolved design decisions
+
+The Designer creates/updates:
+
+```text
+migration/<case>/design.md
+migration/<case>/questions.md
+migration/<case>/status.md
+```
+
+The Designer must not assume that functional equivalence requires structural equivalence.
+
+A NOMAD staging table does not automatically imply a Silver table.
+
+A NOMAD reporting output does not automatically imply a Gold table.
+
+The target should reflect the approved Lakehouse architecture and reusable data model principles.
+
+### Spark Developer
+
+The Spark Developer is responsible for implementation of the approved migration design.
+
+It must:
+
+* read `analysis.md`
+* read `design.md`
+* read `questions.md`
+* read relevant `knowledge/`
+* read relevant architecture
+* implement only sufficiently understood requirements
+* avoid inventing missing business rules
+* avoid embedding undocumented business assumptions in code
+* create appropriate Spark implementation
+* create tests
+* support reconciliation with legacy outputs where possible
+* follow Spark coding and performance standards
+* avoid unnecessary UDFs
+* avoid unnecessary driver-side processing
+* avoid `collect()` for large datasets
+* consider partitioning and data volume
+* consider idempotency
+* consider incremental processing
+* consider replay/backfill behaviour
+* preserve important business-rule traceability
+
+The Spark Developer creates/updates:
+
+```text
+migration/<case>/tests.md
+migration/<case>/status.md
+```
+
+and creates implementation under the migration case's Spark implementation area when that area is introduced.
+
+The developer must not reinterpret an unresolved business requirement silently.
+
+If implementation cannot safely proceed because of an unresolved question, record the issue in `questions.md`.
+
+==================================================
+3. SHARED MIGRATION ARTEFACTS
+=============================
+
+Define the following artefacts clearly.
+
+### analysis.md
+
+Created primarily by the NOMAD Analyst.
+
+It should contain sections such as:
+
+* Migration overview
+* Source artefacts inspected
+* Legacy flow
+* Inputs
+* Outputs
+* Dependencies
+* Field-level transformations
+* Business rules
+* Filters
+* Joins
+* Aggregations
+* Mapping/reference logic
+* Temporal behaviour
+* Load/processing behaviour
+* Error/default/null handling
+* Negative-space analysis
+* Data-quality observations
+* Evidence
+* Inferences
+* Assumptions
+* Unknowns
+* Analyst summary
+
+Do not fill gaps with invented information.
+
+### questions.md
+
+This is the shared unresolved-items ledger.
+
+Each question should identify:
+
+* ID
+* question
+* why it matters
+* evidence
+* impact
+* owner
+* status
+* resolution
+
+Questions should not be hidden inside prose.
+
+Agents may update this file when they discover genuine unresolved issues.
+
+### design.md
+
+Created primarily by the Migration Designer.
+
+It should contain:
+
+* Design objectives
+* Functional requirements derived from analysis
+* Target architecture mapping
+* Bronze/Silver/Semantic/Gold placement
+* Target entities/tables
+* Source-to-target mapping
+* Transformations
+* Business-rule implementation
+* Keys
+* Incremental strategy
+* Temporal handling
+* Data-quality rules
+* Reconciliation strategy
+* Performance considerations
+* Reuse opportunities
+* Design assumptions
+* Open design questions
+* Deviations from legacy structure
+* Traceability back to analysis
+
+### tests.md
+
+Contains migration validation and implementation tests.
+
+Tests should cover, where relevant:
+
+* record counts
+* distinct keys
+* null distributions
+* duplicate detection
+* sums/totals
+* grouped reconciliation
+* filter exclusions
+* mapping distributions
+* referential integrity
+* boundary dates
+* business-date behaviour
+* timezone behaviour
+* currency/rounding behaviour
+* late-arriving data
+* incremental processing
+* replay/idempotency
+* negative cases
+
+The objective is not merely "does Spark run?"
+
+The objective is:
+
+"Does the migrated solution reproduce the required business behaviour while implementing the approved target architecture?"
+
+### status.md
+
+Track migration progress.
+
+At minimum include:
+
+* Analysis status
+* Design status
+* Questions status
+* Implementation status
+* Testing status
+* Overall status
+* Blocking issues
+* Last updated
+
+==================================================
+4. KNOWLEDGE BEHAVIOUR
+======================
+
+The agents must use `knowledge/` as shared reusable context.
+
+Create appropriate initial placeholder/readme content under:
+
+```text
+knowledge/nomad/
+knowledge/lakehouse/
+```
+
+Do not populate these directories with invented SBS NOMAD facts or invented organisational architecture.
+
+The initial knowledge files should explain what belongs there and how agents should use it.
+
+Examples of future NOMAD knowledge:
+
+* NOMAD terminology
+* job types
+* common job patterns
+* known file types
+* common control structures
+* known processing patterns
+
+Examples of future Lakehouse knowledge:
+
+* Bronze principles
+* Silver principles
+* Semantic model principles
+* Gold/reporting principles
+* canonical versus source-specific modelling
+* incremental processing principles
+* data-quality principles
+
+Shared knowledge is reusable context, not unquestionable truth.
+
+When source evidence contradicts shared knowledge, the migration evidence must be surfaced and the conflict must be investigated.
+
+==================================================
+5. INSTRUCTIONS
+===============
+
+Create these instruction files:
+
+```text
+.github/instructions/general.instructions.md
+.github/instructions/nomad.instructions.md
+.github/instructions/migration.instructions.md
+.github/instructions/spark.instructions.md
+```
+
+They should contain behavioural rules, not large duplicated explanations.
+
+`general.instructions.md` should define common rules for all agents:
+
+* evidence first
+* never invent information
+* distinguish fact/inference/assumption/unknown
+* preserve traceability
+* respect authority boundaries
+* use migration artefacts for communication
+* do not silently modify approved architecture
+* do not silently resolve ambiguity
+* keep outputs structured
+* avoid unnecessary duplication
+
+`nomad.instructions.md` should define rules specific to understanding NOMAD.
+
+`migration.instructions.md` should define rules for target architecture and migration design.
+
+`spark.instructions.md` should define rules for implementation and testing.
+
+Do not duplicate the entire agent role definitions inside every instruction file.
+
+==================================================
+6. AGENT FILES
+==============
+
+Create proper custom agent Markdown files:
+
+```text
+.github/agents/nomad-analyst.agent.md
+.github/agents/migration-designer.agent.md
+.github/agents/spark-developer.agent.md
+```
+
+Each agent should clearly define:
+
+* purpose
+* responsibilities
+* inputs
+* required files to read
+* outputs
+* authority boundaries
+* behaviour when information is missing
+* behaviour when information conflicts
+* hand-off to the next agent
+
+Agents must use the repository files as their persistent communication mechanism.
+
+Do not design these agents as independent chatbots that rely on conversational memory.
+
+The workflow should be:
+
+```text
+Input artefacts
+      ↓
+NOMAD Analyst
+      ↓
+analysis.md
+questions.md
+status.md
+      ↓
+Migration Designer
+      ↓
+design.md
+questions.md
+status.md
+      ↓
+Spark Developer
+      ↓
+tests.md
+Spark implementation
+status.md
+```
+
+==================================================
+7. NOMAD ANALYSIS SKILL
+=======================
+
+Create:
+
+```text
+.github/skills/nomad-analysis/SKILL.md
+```
+
+This should contain reusable methodology for analysing NOMAD workloads.
+
+It should cover:
+
+* artefact discovery
+* dependency tracing
+* source-to-target tracing
+* field-level analysis
+* transformations
+* joins
+* filters
+* aggregations
+* business rules
+* control flow
+* temporal behaviour
+* incremental/full processing
+* error handling
+* negative-space analysis
+* evidence capture
+* uncertainty classification
+
+The skill should be reusable by the NOMAD Analyst and potentially other agents.
+
+Do not turn every skill into a separate agent.
+
+==================================================
+8. GLOBAL COPILOT INSTRUCTIONS
+==============================
+
+Create:
+
+```text
+.github/copilot-instructions.md
+```
+
+This is the highest-level repository guidance.
+
+It should establish the overall philosophy:
+
+This repository is an evidence-driven migration factory for migrating SBS NOMAD workloads to a Lakehouse/Spark platform.
+
+The system should optimise for:
+
+* correctness
+* traceability
+* explainability
+* reuse
+* architectural consistency
+* testability
+* maintainability
+
+rather than simply producing code quickly.
+
+Include explicit authority rules:
+
+1. Original migration input artefacts are authoritative evidence of legacy behaviour.
+2. `analysis.md` is an interpretation of that evidence.
+3. `knowledge/` contains reusable validated knowledge.
+4. `architecture/target-architecture.md` contains approved target architecture.
+5. Agents may identify gaps, conflicts, and proposals.
+6. Agents must not silently convert proposals into organisational truth.
+7. Agents must not silently override architecture.
+8. Agents must not silently resolve business ambiguity.
+9. Humans/architects remain the authority for unresolved business and architectural decisions.
+
+Also state:
+
+"Do not optimise for making every migration fit an existing pattern. Optimise for accurately understanding the workload and applying the appropriate target architecture."
+
+==================================================
+9. TARGET ARCHITECTURE
+======================
+
+Create:
+
+```text
+architecture/target-architecture.md
+```
+
+Do not invent a detailed enterprise architecture.
+
+Instead, create a structured placeholder that defines the intended areas of architectural guidance, such as:
+
+* Architecture objectives
+* Source ingestion
+* Bronze
+* Silver
+* Canonical modelling
+* Semantic modelling
+* Gold/reporting
+* Reference data
+* Incremental processing
+* Data quality
+* Lineage
+* Security
+* Performance
+* Reprocessing/replay
+* Testing
+* Observability
+
+Clearly mark areas requiring actual organisational decisions as:
+
+`TO BE DEFINED`
+
+Do not fabricate decisions.
+
+==================================================
+10. TEST MIGRATION CASE
+=======================
+
+Create the `TEST_CASE_001` structure exactly as specified.
+
+Create sensible empty/template Markdown files:
+
+```text
+analysis.md
+questions.md
+design.md
+tests.md
+status.md
+```
+
+These should be templates/examples rather than fabricated migration analysis.
+
+The input directories should be empty placeholders:
+
+```text
+source-files/
+loading-jobs/
+reporting-jobs/
+```
+
+The framework should assume that actual NOMAD artefacts will later be placed there.
+
+==================================================
+11. README
+==========
+
+Create a useful `README.md` explaining:
+
+* purpose of the repository
+* the three-agent architecture
+* repository structure
+* migration lifecycle
+* role of analysis.md
+* role of design.md
+* role of questions.md
+* role of tests.md
+* role of knowledge
+* role of architecture
+* authority/trust model
+* how a new migration case should be started
+
+Explain that the initial implementation deliberately uses only three agents and can later be extended with specialised agents such as:
+
+* lineage analyst
+* business-rule analyst
+* reconciliation specialist
+* migration reviewer
+
+Do not create those agents now.
+
+==================================================
+12. IMPORTANT DESIGN RULE
+=========================
+
+Do not over-engineer the initial solution.
+
+The goal is to create a strong foundation where:
+
+* agents have clear responsibilities
+* agents know what information to read
+* agents know what they are allowed to change
+* agents communicate through structured files
+* knowledge is reusable
+* architecture is controlled
+* uncertainty is visible
+* decisions are traceable
+* implementation is testable
+
+The framework should be simple enough that a human can understand the entire workflow by reading the repository.
+
+After creating the files, review all generated Markdown and ensure there is no contradiction between:
+
+* agent responsibilities
+* instruction files
+* global instructions
+* knowledge rules
+* architecture authority
+* migration artefacts
+
+Do not add functionality that was not requested.
